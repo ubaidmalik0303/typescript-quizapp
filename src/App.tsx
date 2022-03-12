@@ -1,25 +1,73 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import "./App.css";
+import { getQuizDetails } from "./services/quizService";
+import { QuestionType } from "./types/questionType";
+import QuestionCard from "./compoents/QuestionCard";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+  let [quiz, setQuiz] = useState<QuestionType[]>([]);
+  let [currentStep, setCurrentStep] = useState(0);
+  let [score, setScore] = useState(0);
+  let [showResult, setShowResult] = useState(false);
+
+  const handleSubmit = (
+    e: React.FormEvent<EventTarget>,
+    selectedAns: string
+  ) => {
+    e.preventDefault();
+    console.log(quiz[currentStep].answer);
+    if (selectedAns === quiz[currentStep].answer) {
+      setScore(++score);
+    }
+
+    if (currentStep !== quiz?.length - 1) {
+      setCurrentStep(++currentStep);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  const tryAgain = () => {
+    setCurrentStep(0);
+    setScore(0);
+    setShowResult(false);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const questions: QuestionType[] = await getQuizDetails(5, "hard");
+      setQuiz(questions);
+    };
+
+    fetchData();
+  }, []);
+
+  if (showResult) {
+    return (
+      <div className="result-box">
+        <h1>Result</h1>
         <p>
-          Edit <code>src/App.tsx</code> and save to reload.
+          Your Total Score: {score} Out Of {quiz.length}
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+        <button onClick={tryAgain}>Try Again</button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="App">
+        {quiz.length ? (
+          <QuestionCard
+            options={quiz[currentStep].options}
+            question={quiz[currentStep].question}
+            callback={handleSubmit}
+          />
+        ) : (
+          <h2>Loading...</h2>
+        )}
+      </div>
+    </>
   );
 }
 
